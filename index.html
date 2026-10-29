@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#102b2b">
+  <meta name="description" content="Calculadora de costos, importaciones, inventario y precios de venta.">
+
+  <title>ImportaFácil</title>
+
+  <link rel="stylesheet" href="style.css">
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="supabase.js" defer></script>
+  <script src="auth.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+
+<body>
+  <div id="app">
+
+    <header class="app-header">
+      <!-- NUEVO: Botón de menú para celular -->
+      <button id="mobile-menu-btn" class="mobile-menu-btn" type="button" aria-label="Abrir menú">☰</button>
+
+      <a class="brand" href="#" aria-label="ImportaFácil, inicio">
+        <span class="brand-icon">I</span>
+        <span>Importa<span class="brand-accent">Fácil</span></span>
+      </a>
+
+      <div class="header-actions">
+        <span class="connection-status">
+          <span class="status-dot"></span>
+          Comprobando sesión...
+        </span>
+
+        <button id="logout-button" type="button" hidden>
+          Cerrar sesión
+        </button>
+      </div>
+    </header>
+
+    <main class="app-main">
+      <div class="app-layout">
+
+        <!-- MENÚ LATERAL -->
+        <aside class="sidebar" id="sidebar" hidden>
+          <p class="sidebar-label">MENÚ PRINCIPAL</p>
+
+          <nav class="sidebar-nav" aria-label="Navegación principal">
+            <button class="nav-item active" data-view="dashboard" type="button">
+              <span class="nav-icon">⌂</span>
+              <span>Inicio</span>
+            </button>
+
+            <button class="nav-item" data-view="inventory" type="button">
+              <span class="nav-icon">▦</span>
+              <span>Inventario</span>
+            </button>
+
+            <button class="nav-item" data-view="imports" type="button">
+              <span class="nav-icon">⇄</span>
+              <span>Importaciones</span>
+            </button>
+
+            <button class="nav-item" data-view="calculator" type="button">
+              <span class="nav-icon">⌗</span>
+              <span>Calculadora de precios</span>
+            </button>
+
+            <button class="nav-item" data-view="finances" type="button">
+              <span class="nav-icon">$</span>
+              <span>Finanzas</span>
+            </button>
+          </nav>
+
+          <div class="sidebar-bottom">
+            <p class="sidebar-label">PREFERENCIAS</p>
+
+            <button class="nav-item" data-view="settings" type="button">
+              <span class="nav-icon">⚙</span>
+              <span>Configuración</span>
+            </button>
+          </div>
+
+          <!-- SECCIÓN DE TASAS -->
+          <div class="sidebar-rates" id="sidebar-rates">
+            <p class="sidebar-label">TASAS DEL DÍA</p>
+            <div class="rate-item">
+              <span class="rate-name">BCV (USD)</span>
+              <span class="rate-value" id="rate-bcv">Cargando...</span>
+            </div>
+            <div class="rate-item">
+              <span class="rate-name">EURO (BCV)</span>
+              <span class="rate-value" id="rate-euro">Cargando...</span>
+            </div>
+            <div class="rate-item">
+              <span class="rate-name">USDT (P2P)</span>
+              <span class="rate-value" id="rate-usdt">Cargando...</span>
+            </div>
+            <button id="refresh-rates-btn" class="rate-refresh-btn" title="Actualizar tasas">↻ Actualizar</button>
+          </div>
+        </aside>
+
+        <!-- ÁREA DE TRABAJO -->
+        <div class="workspace" id="dashboard-content" hidden>
+
+          <!-- INICIO -->
+          <section class="view-section" data-section="dashboard">
+            <div class="welcome-section">
+              <p class="eyebrow">TU CENTRO DE IMPORTACIONES</p>
+              <h1>Controla tus costos.<br>Calcula tus ganancias.</h1>
+              <p class="welcome-description">
+                Organiza tus compras y toma mejores decisiones para tu negocio.
+              </p>
+            </div>
+
+            <section class="dashboard-section">
+              <div class="section-heading">
+                <div>
+                  <p class="eyebrow">RESUMEN</p>
+                  <h2>Tu negocio</h2>
+                </div>
+                <span class="date-label">ImportaFácil</span>
+              </div>
+
+              <div class="summary-grid">
+                <article class="summary-card">
+                  <span class="summary-label">Productos</span>
+                  <strong id="product-count">0</strong>
+                  <span class="summary-note">Registrados</span>
+                </article>
+
+                <article class="summary-card">
+                  <span class="summary-label">Inversión</span>
+                  <strong id="total-investment">$0.00</strong>
+                  <span class="summary-note">Costo estimado</span>
+                </article>
+
+                <article class="summary-card">
+                  <span class="summary-label">Ventas potenciales</span>
+                  <strong id="potential-sales">$0.00</strong>
+                  <span class="summary-note">Al precio de venta</span>
+                </article>
+
+                <article class="summary-card">
+                  <span class="summary-label">Ganancia potencial</span>
+                  <strong id="potential-profit">$0.00</strong>
+                  <span class="summary-note">Estimación inicial</span>
+                </article>
+              </div>
+            </section>
+          </section>
+
+          <!-- INVENTARIO -->
+          <section class="view-section" data-section="inventory" hidden>
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">GESTIÓN DE PRODUCTOS</p>
+                <h1>Inventario</h1>
+                <p>Registra tus productos y controla cuánto dinero tienes invertido.</p>
+              </div>
+
+              <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <button id="export-inventory-button" type="button" style="background: var(--surface-light); border: 1px solid var(--border); color: var(--accent); font-weight: 700; padding: 12px 18px; border-radius: 11px; cursor: pointer; transition: all 0.2s;">
+                  ↓ Exportar CSV
+                </button>
+                <button id="add-product-button" type="button">
+                  + Agregar producto
+                </button>
+              </div>
+            </div>
+
+            <div class="summary-grid inventory-summary">
+              <article class="summary-card">
+                <span class="summary-label">Productos registrados</span>
+                <strong id="inventory-product-count">0</strong>
+              </article>
+
+              <article class="summary-card">
+                <span class="summary-label">Unidades disponibles</span>
+                <strong id="inventory-unit-count">0</strong>
+              </article>
+
+              <article class="summary-card">
+                <span class="summary-label">Valor del inventario</span>
+                <strong id="inventory-total-value">$0.00</strong>
+              </article>
+            </div>
+
+            <section class="dashboard-section">
+              <div class="section-heading">
+                <div>
+                  <h2>Tus productos</h2>
+                  <p class="welcome-description">
+                    Aquí aparecerán los productos que registres.
+                  </p>
+                </div>
+              </div>
+
+              <div id="inventory-message" role="status" aria-live="polite"></div>
+
+              <div class="inventory-search-wrapper">
+                <input 
+                  type="search" 
+                  id="inventory-search" 
+                  placeholder="Buscar producto por nombre o SKU..." 
+                  aria-label="Buscar producto"
+                >
+              </div>
+
+              <div class="inventory-table-wrapper">
+                <table class="inventory-table">
+                  <thead>
+                    <tr>
+                      <th>Producto</th>
+                      <th>SKU</th>
+                      <th>Existencias</th>
+                      <th>Costo unitario</th>
+                      <th>Acciones</th>
+                    </tr>
+                  </thead>
+
+                  <tbody id="inventory-table-body">
+                    <tr>
+                      <td colspan="5">Todavía no tienes productos registrados.</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </section>
+
+            <!-- FORMULARIO DE PRODUCTO -->
+            <section id="product-form-section" class="dashboard-section" hidden>
+              <div class="section-heading">
+                <div>
+                  <p class="eyebrow">NUEVO REGISTRO</p>
+                  <h2>Agregar producto</h2>
+                </div>
+              </div>
+
+              <form id="product-form">
+                <label for="product-name">Nombre del producto</label>
+                <input id="product-name" name="name" type="text" placeholder="Ej. Audífonos inalámbricos" required>
+
+                <label for="product-sku">Código SKU (opcional)</label>
+                <input id="product-sku" name="sku" type="text" placeholder="Ej. AUD-001">
+
+                <label for="product-quantity">Cantidad disponible</label>
+                <input id="product-quantity" name="quantity" type="number" min="0" step="1" value="0" required>
+
+                <label for="product-purchase-cost">Costo de compra por unidad ($)</label>
+                <input id="product-purchase-cost" name="purchase_unit_usd" type="number" min="0" step="0.01" value="0" required>
+
+                <label for="product-shipping-cost">Envío por unidad ($)</label>
+                <input id="product-shipping-cost" name="shipping_unit_usd" type="number" min="0" step="0.01" value="0" required>
+
+                <label for="product-other-cost">Otros costos por unidad ($)</label>
+                <input id="product-other-cost" name="other_cost_unit_usd" type="number" min="0" step="0.01" value="0" required>
+
+                <div class="form-actions">
+                  <button id="save-product-button" type="submit">Guardar producto</button>
+                  <button id="cancel-product-button" type="button">Cancelar</button>
+                </div>
+              </form>
+            </section>
+          </section>
+
+          <!-- IMPORTACIONES -->
+          <section class="view-section" data-section="imports" hidden>
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">COMPRAS Y LOGÍSTICA</p>
+                <h1>Importaciones</h1>
+                <p>Calcula el costo real por unidad al traer un lote completo.</p>
+              </div>
+            </div>
+
+            <section class="dashboard-section">
+              <div class="section-heading">
+                <div>
+                  <p class="eyebrow">PRORRATEO DE GASTOS</p>
+                  <h2>Costos del lote</h2>
+                </div>
+              </div>
+
+              <div class="calculator-form-grid">
+                <div>
+                  <label for="import-quantity">Cantidad total de unidades</label>
+                  <input id="import-quantity" type="number" min="1" step="1" value="1">
+                </div>
+                <div>
+                  <label for="import-product-cost">Costo total de la mercancía ($)</label>
+                  <input id="import-product-cost" type="number" min="0" step="0.01" value="0">
+                </div>
+                <div>
+                  <label for="import-shipping-cost">Flete / Envío total ($)</label>
+                  <input id="import-shipping-cost" type="number" min="0" step="0.01" value="0">
+                </div>
+                <div>
+                  <label for="import-other-costs">Aduanas / Seguros / Otros ($)</label>
+                  <input id="import-other-costs" type="number" min="0" step="0.01" value="0">
+                </div>
+              </div>
+
+              <div class="summary-grid" style="margin-top: 24px;">
+                <article class="summary-card" style="grid-column: 1 / -1; min-height: auto; padding: 16px 22px; flex-direction: row; justify-content: space-between; align-items: center; background: rgba(117, 224, 192, 0.08); border-color: rgba(117, 224, 192, 0.3); flex-wrap: wrap; gap: 16px;">
+                  <div style="display: flex; align-items: center; gap: 16px;">
+                    <span class="summary-label" style="font-size: 14px; color: var(--text);">Costo real por unidad</span>
+                    <strong id="import-unit-result" style="font-size: 24px; color: var(--accent);">$0.00</strong>
+                  </div>
+                  <button id="import-send-to-calculator" type="button" style="padding: 10px 16px; border-radius: 8px; background: var(--surface-light); border: 1px solid var(--border); color: var(--accent); font-size: 12px; font-weight: 650; cursor: pointer; transition: background 0.2s;">
+                    Enviar a Calculadora &rarr;
+                  </button>
+                </article>
+              </div>
+            </section>
+          </section>
+
+          <!-- CALCULADORA DE PRECIOS -->
+          <section class="view-section" data-section="calculator" hidden>
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">COSTOS Y RENTABILIDAD</p>
+                <h1>Calculadora de precios</h1>
+                <p>Calcula costos y define precios de venta rentables para tu negocio.</p>
+              </div>
+            </div>
+
+            <!-- DATOS DEL PRODUCTO Y COSTOS -->
+            <section class="dashboard-section">
+              <div class="section-heading">
+                <div>
+                  <p class="eyebrow">PASO 1</p>
+                  <h2>Datos y costos</h2>
+                </div>
+              </div>
+
+              <label for="calculator-product">Producto del inventario (opcional)</label>
+              <select id="calculator-product">
+                <option value="">Calcular un producto manualmente</option>
+              </select>
+
+              <div class="calculator-form-grid">
+                <div>
+                  <label for="calculator-name">Nombre del producto</label>
+                  <input id="calculator-name" type="text" placeholder="Ej. Audífonos inalámbricos">
+                </div>
+                <div>
+                  <label for="calculator-quantity">Unidades a vender (Totales)</label>
+                  <input id="calculator-quantity" type="number" min="1" step="1" value="1">
+                </div>
+                <div>
+                  <label for="calculator-purchase">Costo de compra por unidad ($)</label>
+                  <input id="calculator-purchase" type="number" min="0" step="0.01" value="0">
+                </div>
+              </div>
+
+              <!-- Costos de importación (Envío por caja) -->
+              <div style="margin-top: 24px; padding-top: 20px; border-top: 1px dashed rgba(41, 67, 68, 0.8);">
+                <p class="eyebrow" style="margin-bottom: 16px;">COSTOS DE IMPORTACIÓN (POR CAJA)</p>
+                
+                <div class="calculator-form-grid">
+                  <div>
+                    <label for="calculator-box-shipping">Costo total de envío de la caja ($)</label>
+                    <input id="calculator-box-shipping" type="number" min="0" step="0.01" value="0">
+                  </div>
+                  <div>
+                    <label for="calculator-box-units">Unidades que trae la caja</label>
+                    <input id="calculator-box-units" type="number" min="1" step="1" value="1">
+                  </div>
+                  <div>
+                    <label for="calculator-other">Otros costos por unidad ($)</label>
+                    <input id="calculator-other" type="number" min="0" step="0.01" value="0">
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <!-- MÁRGENES -->
+            <section class="dashboard-section">
+              <div class="section-heading">
+                <div>
+                  <p class="eyebrow">PASO 2</p>
+                  <h2>Define tus márgenes</h2>
+                </div>
+              </div>
+
+              <div class="calculator-form-grid">
+                <div>
+                  <label for="calculator-retail-margin">Porcentaje añadido al costo al detal (%)</label>
+                  <input id="calculator-retail-margin" type="number" min="0" max="500" step="1" value="35">
+                </div>
+                <div>
+                  <label for="calculator-wholesale-margin">Porcentaje añadido al costo al mayor (%)</label>
+                  <input id="calculator-wholesale-margin" type="number" min="0" max="500" step="1" value="20">
+                </div>
+              </div>
+
+              <p class="welcome-description">
+                Estos porcentajes se suman al costo unitario. El margen real sobre el precio de venta se muestra en los resultados.
+              </p>
+
+              <div class="form-actions">
+                <button id="calculator-reset" type="button">Restablecer valores</button>
+              </div>
+            </section>
+
+            <!-- CONFIGURACIÓN DE IMPUESTOS -->
+            <section class="dashboard-section">
+              <div class="section-heading">
+                <div>
+                  <p class="eyebrow">OPCIONAL</p>
+                  <h2>Configuración de impuestos</h2>
+                </div>
+              </div>
+
+              <label class="tax-toggle" for="calculator-tax-enabled">
+                <input type="checkbox" id="calculator-tax-enabled">
+                <span>Aplicar impuesto a este cálculo</span>
+              </label>
+
+              <div id="calculator-tax-options" hidden>
+                <div class="calculator-form-grid">
+                  <div>
+                    <label for="calculator-tax-rate">Tasa del impuesto (%)</label>
+                    <input type="number" id="calculator-tax-rate" min="0" max="100" step="0.01" value="0" placeholder="Ej. 16">
+                  </div>
+                  <div>
+                    <label for="calculator-tax-mode">Cómo aplicar el impuesto</label>
+                    <select id="calculator-tax-mode">
+                      <option value="added">Sumar el impuesto al precio</option>
+                      <option value="included">El impuesto ya está incluido en el precio</option>
+                    </select>
+                  </div>
+                </div>
+
+                <p class="welcome-description">
+                  Introduce la tasa aplicable a tu operación. Verifica el tratamiento fiscal correspondiente antes de utilizar el resultado.
+                </p>
+              </div>
+            </section>
+
+            <!-- RESULTADOS -->
+            <section class="dashboard-section">
+              <div class="section-heading">
+                <div>
+                  <p class="eyebrow">PASO 3</p>
+                  <h2>Resumen de rentabilidad</h2>
+                </div>
+              </div>
+
+              <div class="summary-grid calculator-results">
+                <article class="summary-card">
+                  <span class="summary-label">Costo por unidad</span>
+                  <strong id="calculator-unit-cost">$0.00</strong>
+                </article>
+
+                <article class="summary-card">
+                  <span class="summary-label">Precio al detal</span>
+                  <strong id="calculator-retail-price">$0.00</strong>
+                  <span class="summary-note" id="calculator-retail-margin-result">Margen real: 0,00%</span>
+                </article>
+
+                <article class="summary-card">
+                  <span class="summary-label">Precio al mayor</span>
+                  <strong id="calculator-wholesale-price">$0.00</strong>
+                  <span class="summary-note" id="calculator-wholesale-margin-result">Margen real: 0,00%</span>
+                </article>
+
+                <article class="summary-card">
+                  <span class="summary-label">Inversión total</span>
+                  <strong id="calculator-total-cost">$0.00</strong>
+                </article>
+
+                <article class="summary-card">
+                  <span class="summary-label">Ganancia total al detal</span>
+                  <strong id="calculator-retail-profit">$0.00</strong>
+                </article>
+
+                <article class="summary-card">
+                  <span class="summary-label">Ganancia total al mayor</span>
+                  <strong id="calculator-wholesale-profit">$0.00</strong>
+                </article>
+              </div>
+
+              <div id="calculator-tax-results" hidden>
+                <h3>Desglose de impuestos</h3>
+                <div class="summary-grid">
+                  <article class="summary-card">
+                    <span class="summary-label">Impuesto por unidad al detal</span>
+                    <strong id="calculator-retail-tax">$0.00</strong>
+                  </article>
+                  <article class="summary-card">
+                    <span class="summary-label">Precio final al detal</span>
+                    <strong id="calculator-retail-final-price">$0.00</strong>
+                  </article>
+                  <article class="summary-card">
+                    <span class="summary-label">Impuesto por unidad al mayor</span>
+                    <strong id="calculator-wholesale-tax">$0.00</strong>
+                  </article>
+                  <article class="summary-card">
+                    <span class="summary-label">Precio final al mayor</span>
+                    <strong id="calculator-wholesale-final-price">$0.00</strong>
+                  </article>
+                  <article class="summary-card">
+                    <span class="summary-label">Impuesto total al detal</span>
+                    <strong id="calculator-retail-total-tax">$0.00</strong>
+                  </article>
+                  <article class="summary-card">
+                    <span class="summary-label">Impuesto total al mayor</span>
+                    <strong id="calculator-wholesale-total-tax">$0.00</strong>
+                  </article>
+                </div>
+              </div>
+
+              <p id="calculator-message" role="status" aria-live="polite"></p>
+
+              <div class="form-actions" style="margin-top: 24px; border-top: none; padding-top: 0;">
+                <button id="calculator-save-to-inventory" type="button" style="background: var(--surface-light); border: 1px solid var(--border); color: var(--accent); font-weight: 700; padding: 12px 18px; border-radius: 11px; cursor: pointer; transition: all 0.2s;">
+                  Guardar en Inventario
+                </button>
+              </div>
+            </section>
+          </section>
+
+          <!-- FINANZAS -->
+          <section class="view-section" data-section="finances" hidden>
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">CONTROL FINANCIERO</p>
+                <h1>Finanzas</h1>
+                <p>Consulta la inversión y la rentabilidad estimada de tus productos.</p>
+              </div>
+            </div>
+
+            <section class="dashboard-section">
+              <h2>Resumen financiero</h2>
+              <div class="summary-grid">
+                <article class="summary-card">
+                  <span class="summary-label">Inversión en inventario</span>
+                  <strong id="finances-investment">$0.00</strong>
+                </article>
+
+                <article class="summary-card">
+                  <span class="summary-label">Ventas potenciales</span>
+                  <strong id="finances-sales">$0.00</strong>
+                </article>
+
+                <article class="summary-card">
+                  <span class="summary-label">Ganancia potencial</span>
+                  <strong id="finances-profit">$0.00</strong>
+                </article>
+              </div>
+
+              <p class="welcome-description">
+                Estos importes son estimaciones basadas en los costos y las existencias de tu inventario. No representan un registro contable.
+              </p>
+            </section>
+          </section>
+
+          <!-- CONFIGURACIÓN -->
+          <section class="view-section" data-section="settings" hidden>
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">PREFERENCIAS</p>
+                <h1>Configuración</h1>
+                <p>Personaliza tus preferencias de trabajo.</p>
+              </div>
+            </div>
+
+            <section class="dashboard-section">
+              <h2>Preferencias de la aplicación</h2>
+              <p class="welcome-description">
+                En futuras versiones podremos configurar la moneda, los márgenes predeterminados y otras preferencias de tu cuenta.
+              </p>
+            </section>
+          </section>
+
+        </div>
+        <!-- FIN DEL ÁREA DE TRABAJO -->
+
+        <!-- INICIO DE SESIÓN -->
+        <section id="auth-section" class="auth-section">
+          <div class="auth-card">
+            <p class="eyebrow">TU ESPACIO DE TRABAJO</p>
+            <h1>Bienvenido a ImportaFácil</h1>
+            <p class="auth-description">
+              Inicia sesión para gestionar tus productos, controlar tus importaciones y consultar tus costos.
+            </p>
+
+            <form id="auth-form">
+              <label for="auth-email">Correo electrónico</label>
+              <input id="auth-email" name="email" type="email" placeholder="tu@correo.com" autocomplete="email" required>
+
+              <label for="auth-password">Contraseña</label>
+              <input id="auth-password" name="password" type="password" placeholder="Introduce tu contraseña" autocomplete="current-password" minlength="6" required>
+
+              <button id="login-button" type="submit">Iniciar sesión</button>
+              <button id="register-button" type="button">Crear mi cuenta</button>
+
+              <p id="auth-message" class="auth-message" role="status" aria-live="polite"></p>
+            </form>
+          </div>
+        </section>
+
+      </div>
+    </main>
+
+    <footer class="app-footer">
+      <p>ImportaFácil · Tu control de importaciones</p>
+    </footer>
+
+  </div>
+</body>
+</html>

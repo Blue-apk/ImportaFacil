@@ -1,0 +1,47 @@
+
+/* =================================
+   IMPORTAFÁCIL — LÓGICA INICIAL
+   ================================= */
+
+"use strict";
+
+const ImportaFacil = {
+  config: {
+    currency: "USD",
+    locale: "es-VE"
+  },
+
+  // Formatea cantidades monetarias en dólares.
+  formatMoney(amount) {
+    return new Intl.NumberFormat(this.config.locale, {
+      style: "currency",
+      currency: this.config.currency,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(Number(amount) || 0);
+  },
+
+  // Actualiza un indicador del panel.
+  setText(id, value) {
+    const element = document.getElementById(id);
+
+    if (element) {
+      element.textContent = value;
+    }
+  },
+
+  // Inicializa el panel principal.
+  init() {
+    this.setText("product-count", "0");
+    this.setText("total-investment", this.formatMoney(0));
+    this.setText("potential-sales", this.formatMoney(0));
+    this.setText("potential-profit", this.formatMoney(0));
+
+    console.info("ImportaFácil se ha iniciado correctamente.");
+  }
+};
+
+// Inicia la aplicación cuando el documento está listo.
+document.addEventListener("DOMContentLoaded", () => {
+  ImportaFacil.init();
+});
