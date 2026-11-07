@@ -1,52 +1,22 @@
-
 /* =================================
-   IMPORTAFÁCIL — CONEXIÓN A SUPABASE
+   IMPORTAFÁCIL — CONEXIÓN SUPABASE
    ================================= */
 
-// Reemplaza estos valores con los datos
-// de tu propio proyecto de Supabase.
-const SUPABASE_URL = "https://sdyknihbnmvjcwoyqctf.supabase.co";
-const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_3oUDcNDtr50Bgv3vFCQ-yA_gtNykJxk";
+"use strict";
 
-// El cliente se inicializará en el siguiente paso.
-window.importaFacilConfig = {
-  supabaseUrl: SUPABASE_URL,
-  supabaseKey: SUPABASE_PUBLISHABLE_KEY
-};
-/* =================================
-   IMPORTAFÁCIL — CLIENTE SUPABASE
-   ================================= */
+const SUPABASE_URL = "https://cfgwzoskzyhcxesqcddt.supabase.co"; 
+const SUPABASE_ANON_KEY = "sb_publishable_SciAQy_sOtF2m6HcElDhLg_WZYaIjok";
 
-(() => {
-  "use strict";
-
-  const config = window.importaFacilConfig;
-
-  if (!config) {
-    console.error("No se encontró la configuración de Supabase.");
-    return;
+window.supabaseClient = window.supabase.createClient(
+  SUPABASE_URL, 
+  SUPABASE_ANON_KEY,
+  {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true
+    }
   }
+);
 
-  if (
-    !config.supabaseUrl ||
-    config.supabaseUrl.includes("PEGA_AQUI") ||
-    !config.supabaseKey ||
-    config.supabaseKey.includes("PEGA_AQUI")
-  ) {
-    console.error("Revisa la URL y la clave publicable de Supabase.");
-    return;
-  }
-
-  if (!window.supabase?.createClient) {
-    console.error("No se pudo cargar la biblioteca de Supabase.");
-    return;
-  }
-
-  window.supabaseClient = window.supabase.createClient(
-    config.supabaseUrl,
-    config.supabaseKey
-  );
-
-  console.info("Cliente de Supabase inicializado.");
-})();
-
+console.info("✅ Conexión con Supabase establecida correctamente.");
