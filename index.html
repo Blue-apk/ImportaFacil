@@ -10,10 +10,10 @@
 
   <link rel="stylesheet" href="style.css">
 
-  <!-- 1. SDK de Supabase -->
+  <!-- 1. SDK de Supabase (Carga primero y sin defer) -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   
-  <!-- 2. Conexión -->
+  <!-- 2. Conexión (Se ejecuta en orden) -->
   <script src="supabase.js" defer></script>
   
   <!-- 3. Autenticación -->
