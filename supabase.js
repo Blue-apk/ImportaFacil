@@ -4,7 +4,7 @@
 
 "use strict";
 
-const SUPABASE_URL = "https://cfgwzoskzyhcxesqcddt.supabase.co"; 
+const SUPABASE_URL = "https://sdyknihbnmvjcwoyqctf.supabase.co"; 
 const SUPABASE_ANON_KEY = "sb_publishable_SciAQy_sOtF2m6HcElDhLg_WZYaIjok";
 
 window.supabaseClient = window.supabase.createClient(
