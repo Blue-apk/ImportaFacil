@@ -10,9 +10,16 @@
 
   <link rel="stylesheet" href="style.css">
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <!-- 1. SDK de Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  
+  <!-- 2. Conexión -->
   <script src="supabase.js" defer></script>
+  
+  <!-- 3. Autenticación -->
   <script src="auth.js" defer></script>
+  
+  <!-- 4. Lógica de la App -->
   <script src="app.js" defer></script>
 </head>
 
@@ -450,7 +457,6 @@
                   </div>
                   <label for="calculator-retail-margin">Margen de ganancia</label>
                   <div class="margin-input-wrapper">
-                    <!-- SE ELIMINÓ EL max="99.99" -->
                     <input id="calculator-retail-margin" type="number" min="0" step="0.01" value="35">
                     <span>%</span>
                   </div>
@@ -464,7 +470,6 @@
                   </div>
                   <label for="calculator-wholesale-margin">Margen de ganancia</label>
                   <div class="margin-input-wrapper">
-                    <!-- SE ELIMINÓ EL max="99.99" -->
                     <input id="calculator-wholesale-margin" type="number" min="0" step="0.01" value="20">
                     <span>%</span>
                   </div>

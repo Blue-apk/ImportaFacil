@@ -165,52 +165,39 @@ const ImportaFacil = {
   },
 
   async handleAuth(action) {
-    const form = this.$("auth-form");
-    const emailInput = this.$("auth-email");
-    const passwordInput = this.$("auth-password");
+    // Buscamos el formulario y los campos (sirve para el HTML viejo y el nuevo)
+    const form = this.$("login-form") || this.$("auth-form");
+    const emailInput = this.$("login-email") || this.$("auth-email");
+    const passwordInput = this.$("login-password") || this.$("auth-password");
     const loginButton = this.$("login-button");
-    const registerButton = this.$("register-button");
+    const registerButton = this.$("signup-button") || this.$("register-button");
 
     if (!form || !form.reportValidity()) return;
 
     const email = emailInput.value.trim();
     const password = passwordInput.value;
 
-    loginButton.disabled = true;
-    registerButton.disabled = true;
+    if (loginButton) loginButton.disabled = true;
+    if (registerButton) registerButton.disabled = true;
 
     this.showMessage("auth-message", "Procesando...");
+    this.showMessage("signup-message", "Procesando...");
 
     try {
       if (action === "register") {
-        const result = await window.ImportaFacilAuth.register(
-          email,
-          password
-        );
-
-        this.showMessage(
-          "auth-message",
-          result?.message || "Registro completado. Revisa tu correo."
-        );
+        const result = await window.ImportaFacilAuth.register(email, password);
+        this.showMessage("signup-message", result?.message || "Registro completado. Revisa tu correo.");
       } else {
         await window.ImportaFacilAuth.login(email, password);
-
-        this.showMessage(
-          "auth-message",
-          "Sesión iniciada correctamente."
-        );
+        this.showMessage("auth-message", "Sesión iniciada correctamente.");
       }
     } catch (error) {
       console.error("Error de autenticación:", error);
-
-      this.showMessage(
-        "auth-message",
-        error.message || "No se pudo completar la operación.",
-        true
-      );
+      this.showMessage("auth-message", error.message || "No se pudo iniciar sesión.", true);
+      this.showMessage("signup-message", error.message || "No se pudo registrar.", true);
     } finally {
-      loginButton.disabled = false;
-      registerButton.disabled = false;
+      if (loginButton) loginButton.disabled = false;
+      if (registerButton) registerButton.disabled = false;
     }
   },
 
@@ -263,13 +250,8 @@ const ImportaFacil = {
         fetchRate("https://ve.dolarapi.com/v1/euros/oficial")
       ]);
 
-      bcv.textContent = dollarRate
-        ? `${dollarRate.toFixed(2)} Bs.`
-        : "N/D";
-
-      euro.textContent = euroRate
-        ? `${euroRate.toFixed(2)} Bs.`
-        : "N/D";
+      bcv.textContent = dollarRate ? `${dollarRate.toFixed(2)} Bs.` : "N/D";
+      euro.textContent = euroRate ? `${euroRate.toFixed(2)} Bs.` : "N/D";
     } catch (error) {
       console.error("Error al consultar tasas BCV:", error);
       bcv.textContent = "N/D";
@@ -277,18 +259,13 @@ const ImportaFacil = {
     }
 
     try {
-      const response = await fetch(
-        "https://api.binance.com/api/v3/ticker/price?symbol=USDTVES"
-      );
-
+      const response = await fetch("https://api.binance.com/api/v3/ticker/price?symbol=USDTVES");
       if (!response.ok) throw new Error("Tasa no disponible");
 
       const data = await response.json();
       const rate = Number(data.price);
 
-      usdt.textContent = Number.isFinite(rate)
-        ? `${rate.toFixed(2)} Bs.`
-        : "N/D";
+      usdt.textContent = Number.isFinite(rate) ? `${rate.toFixed(2)} Bs.` : "N/D";
     } catch (error) {
       console.error("Error al consultar USDT:", error);
       usdt.textContent = "N/D";
@@ -340,12 +317,7 @@ const ImportaFacil = {
       }
     } catch (error) {
       console.error("Error al cargar inventario:", error);
-
-      this.showMessage(
-        "inventory-message",
-        error.message || "No se pudo cargar el inventario.",
-        true
-      );
+      this.showMessage("inventory-message", error.message || "No se pudo cargar el inventario.", true);
     } finally {
       this.loadingProducts = false;
     }
@@ -360,8 +332,7 @@ const ImportaFacil = {
     const totalProducts = this.products.length;
 
     const investment = this.products.reduce((total, product) => {
-      return total +
-        Number(product.quantity || 0) * this.getUnitCost(product);
+      return total + Number(product.quantity || 0) * this.getUnitCost(product);
     }, 0);
 
     const sales = this.products.reduce((total, product) => {
@@ -378,15 +349,10 @@ const ImportaFacil = {
     this.setText("potential-sales", this.money(sales));
     this.setText("potential-profit", this.money(sales - investment));
 
-    this.setText("finances-investment", this.money(investment));
-    this.setText("finances-sales", this.money(sales));
-    this.setText("finances-profit", this.money(sales - investment));
-
     this.setText("inventory-product-count", totalProducts);
 
     const units = this.products.reduce(
-      (total, product) => total + Number(product.quantity || 0),
-      0
+      (total, product) => total + Number(product.quantity || 0), 0
     );
 
     this.setText("inventory-unit-count", units);
@@ -481,12 +447,12 @@ const ImportaFacil = {
       costCell.textContent = this.money(this.getUnitCost(product));
 
       const actionsCell = document.createElement("td");
-      actionsCell.className = "product-actions"; // Usamos esta clase para agrupar los botones
+      actionsCell.className = "table-actions"; // Clase para agrupar y alinear
 
       const editButton = document.createElement("button");
       editButton.type = "button";
       editButton.textContent = "Editar";
-      editButton.className = "btn btn-secondary btn-sm"; // Clases para botón verde
+      editButton.className = "btn btn-secondary btn-sm"; // ESTILO VERDE
       editButton.addEventListener("click", () => {
         this.editProduct(product.id);
       });
@@ -494,7 +460,7 @@ const ImportaFacil = {
       const deleteButton = document.createElement("button");
       deleteButton.type = "button";
       deleteButton.textContent = "Eliminar";
-      deleteButton.className = "btn btn-danger btn-sm"; // Clases para botón rojo
+      deleteButton.className = "btn btn-danger btn-sm"; // ESTILO ROJO
       deleteButton.addEventListener("click", () => {
         this.deleteProduct(product.id);
       });
@@ -527,12 +493,9 @@ const ImportaFacil = {
     this.$("product-name").value = product?.name || "";
     this.$("product-sku").value = product?.sku || "";
     this.$("product-quantity").value = product?.quantity ?? 0;
-    this.$("product-purchase-cost").value =
-      product?.purchase_unit_usd ?? 0;
-    this.$("product-shipping-cost").value =
-      product?.shipping_unit_usd ?? 0;
-    this.$("product-other-cost").value =
-      product?.other_cost_unit_usd ?? 0;
+    this.$("product-purchase-cost").value = product?.purchase_unit_usd ?? 0;
+    this.$("product-shipping-cost").value = product?.shipping_unit_usd ?? 0;
+    this.$("product-other-cost").value = product?.other_cost_unit_usd ?? 0;
 
     section.hidden = false;
     section.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -582,11 +545,7 @@ const ImportaFacil = {
       product.other_cost_unit_usd >= 0;
 
     if (!valid) {
-      this.showMessage(
-        "inventory-message",
-        "Revisa el nombre, la cantidad y los costos.",
-        true
-      );
+      this.showMessage("inventory-message", "Revisa el nombre, la cantidad y los costos.", true);
       return;
     }
 
@@ -616,26 +575,14 @@ const ImportaFacil = {
       this.resetProductForm();
       await this.loadProducts();
 
-      this.showMessage(
-        "inventory-message",
-        editingId
-          ? "Producto actualizado correctamente."
-          : "Producto guardado correctamente."
-      );
+      this.showMessage("inventory-message", editingId ? "Producto actualizado correctamente." : "Producto guardado correctamente.");
     } catch (error) {
       console.error("Error al guardar producto:", error);
-
-      this.showMessage(
-        "inventory-message",
-        error.message || "No se pudo guardar el producto.",
-        true
-      );
+      this.showMessage("inventory-message", error.message || "No se pudo guardar el producto.", true);
     } finally {
       if (button) {
         button.disabled = false;
-        button.textContent = this.editingProductId
-          ? "Guardar cambios"
-          : "Guardar producto";
+        button.textContent = this.editingProductId ? "Guardar cambios" : "Guardar producto";
       }
     }
   },
@@ -649,10 +596,7 @@ const ImportaFacil = {
     const product = this.products.find((item) => item.id === productId);
     if (!product) return;
 
-    const confirmed = confirm(
-      `¿Seguro que deseas eliminar "${product.name}"? Esta acción no se puede deshacer.`
-    );
-
+    const confirmed = confirm(`¿Seguro que deseas eliminar "${product.name}"? Esta acción no se puede deshacer.`);
     if (!confirmed) return;
 
     try {
@@ -667,12 +611,7 @@ const ImportaFacil = {
       this.showMessage("inventory-message", "Producto eliminado correctamente.");
     } catch (error) {
       console.error("Error al eliminar producto:", error);
-
-      this.showMessage(
-        "inventory-message",
-        error.message || "No se pudo eliminar el producto.",
-        true
-      );
+      this.showMessage("inventory-message", error.message || "No se pudo eliminar el producto.", true);
     }
   },
 
@@ -680,32 +619,16 @@ const ImportaFacil = {
 
   exportInventoryToCSV() {
     if (!this.products.length) {
-      this.showMessage(
-        "inventory-message",
-        "No hay productos para exportar.",
-        true
-      );
+      this.showMessage("inventory-message", "No hay productos para exportar.", true);
       return;
     }
 
     const headers = [
-      "Producto",
-      "SKU",
-      "Existencias",
-      "Costo de compra",
-      "Envío por unidad",
-      "Otros costos",
-      "Costo real unitario"
+      "Producto", "SKU", "Existencias", "Costo de compra", "Envío por unidad", "Otros costos", "Costo real unitario"
     ];
 
     const rows = this.products.map((product) => [
-      product.name,
-      product.sku || "",
-      product.quantity,
-      product.purchase_unit_usd,
-      product.shipping_unit_usd,
-      product.other_cost_unit_usd,
-      this.getUnitCost(product).toFixed(2)
+      product.name, product.sku || "", product.quantity, product.purchase_unit_usd, product.shipping_unit_usd, product.other_cost_unit_usd, this.getUnitCost(product).toFixed(2)
     ]);
 
     const csv = [
@@ -713,46 +636,32 @@ const ImportaFacil = {
       ...rows.map((row) => row.map((value) => this.escapeCSV(value)).join(","))
     ].join("\n");
 
-    const blob = new Blob(["\uFEFF" + csv], {
-      type: "text/csv;charset=utf-8;"
-    });
-
+    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
 
     link.href = url;
-    link.download = `inventario_importafacil_${new Date()
-      .toISOString()
-      .slice(0, 10)}.csv`;
+    link.download = `inventario_importafacil_${new Date().toISOString().slice(0, 10)}.csv`;
 
     document.body.appendChild(link);
     link.click();
     link.remove();
 
     URL.revokeObjectURL(url);
-
-    this.showMessage(
-      "inventory-message",
-      "Inventario exportado correctamente."
-    );
+    this.showMessage("inventory-message", "Inventario exportado correctamente.");
   },
-    /* ---------- CALCULADORA DE IMPORTACIONES ---------- */
+
+  /* ---------- CALCULADORA DE IMPORTACIONES ---------- */
 
   getCalculatorItems() {
     const container = this.$("calculator-items");
     if (!container) return [];
 
-    return Array.from(
-      container.querySelectorAll("[data-calculator-item]")
-    ).map((row) => ({
+    return Array.from(container.querySelectorAll("[data-calculator-item]")).map((row) => ({
       row,
       name: row.querySelector(".calculator-item-name")?.value.trim() || "",
-      quantity: Number(
-        row.querySelector(".calculator-item-quantity")?.value || 0
-      ),
-      purchaseUnit: Number(
-        row.querySelector(".calculator-item-cost")?.value || 0
-      ),
+      quantity: Number(row.querySelector(".calculator-item-quantity")?.value || 0),
+      purchaseUnit: Number(row.querySelector(".calculator-item-cost")?.value || 0),
       subtotalOutput: row.querySelector(".calculator-item-subtotal")
     }));
   },
@@ -766,34 +675,14 @@ const ImportaFacil = {
     row.dataset.calculatorItem = "";
 
     const fields = [
-      {
-        label: "Producto",
-        className: "calculator-item-name",
-        type: "text",
-        placeholder: "Nombre del producto",
-        value: values.name || ""
-      },
-      {
-        label: "Cantidad",
-        className: "calculator-item-quantity",
-        type: "number",
-        min: "1",
-        step: "1",
-        value: String(values.quantity ?? 1)
-      },
-      {
-        label: "Costo unitario ($)",
-        className: "calculator-item-cost",
-        type: "number",
-        min: "0",
-        step: "0.01",
-        value: String(values.purchaseUnit ?? 0)
-      }
+      { label: "Producto", className: "calculator-item-name", type: "text", placeholder: "Nombre del producto", value: values.name || "" },
+      { label: "Cantidad", className: "calculator-item-quantity", type: "number", min: "1", step: "1", value: String(values.quantity ?? 1) },
+      { label: "Costo unitario ($)", className: "calculator-item-cost", type: "number", min: "0", step: "0.01", value: String(values.purchaseUnit ?? 0) }
     ];
 
     fields.forEach((field) => {
       const wrapper = document.createElement("div");
-      wrapper.className = "field"; // Añadimos la clase field
+      wrapper.className = "field";
       const label = document.createElement("label");
       const input = document.createElement("input");
 
@@ -813,7 +702,7 @@ const ImportaFacil = {
     });
 
     const subtotalWrapper = document.createElement("div");
-    subtotalWrapper.className = "field"; // Añadimos la clase field
+    subtotalWrapper.className = "field";
     const subtotalLabel = document.createElement("label");
     const subtotal = document.createElement("output");
 
@@ -855,19 +744,10 @@ const ImportaFacil = {
   getCalculatorCalculation() {
     const items = this.getCalculatorItems();
 
-    const shippingTotal = Math.max(
-      0,
-      this.number("calculator-shipping-total")
-    );
+    const shippingTotal = Math.max(0, this.number("calculator-shipping-total"));
+    const otherTotal = Math.max(0, this.number("calculator-other-total"));
 
-    const otherTotal = Math.max(
-      0,
-      this.number("calculator-other-total")
-    );
-
-    const activeItems = items.filter((item) => {
-      return item.name || item.purchaseUnit > 0;
-    });
+    const activeItems = items.filter((item) => item.name || item.purchaseUnit > 0);
 
     const productsSubtotal = activeItems.reduce((total, item) => {
       return total + item.quantity * item.purchaseUnit;
@@ -875,42 +755,26 @@ const ImportaFacil = {
 
     const sharedCosts = shippingTotal + otherTotal;
 
-    // AHORA LEEMOS EL MARGEN COMO PORCENTAJE DIRECTO (Ej: 35 = 35%)
     const retailMargin = this.number("calculator-retail-margin", 35);
     const wholesaleMargin = this.number("calculator-wholesale-margin", 20);
 
-    // La validación cambia para aceptar cualquier número mayor o igual a 0
     const validMargins = retailMargin >= 0 && wholesaleMargin >= 0;
 
     const calculatedItems = activeItems.map((item) => {
       const purchaseSubtotal = item.quantity * item.purchaseUnit;
-
-      const proportion = productsSubtotal > 0
-        ? purchaseSubtotal / productsSubtotal
-        : 0;
+      const proportion = productsSubtotal > 0 ? purchaseSubtotal / productsSubtotal : 0;
 
       const allocatedShipping = shippingTotal * proportion;
       const allocatedOther = otherTotal * proportion;
 
-      const shippingPerUnit = item.quantity > 0
-        ? allocatedShipping / item.quantity
-        : 0;
+      const shippingPerUnit = item.quantity > 0 ? allocatedShipping / item.quantity : 0;
+      const otherPerUnit = item.quantity > 0 ? allocatedOther / item.quantity : 0;
 
-      const otherPerUnit = item.quantity > 0
-        ? allocatedOther / item.quantity
-        : 0;
+      const unitCost = item.purchaseUnit + shippingPerUnit + otherPerUnit;
 
-      const unitCost =
-        item.purchaseUnit + shippingPerUnit + otherPerUnit;
-
-      // NUEVA FÓRMULA: Markup (Costo * (1 + Margen/100))
-      const retailPrice = validMargins
-        ? unitCost * (1 + (retailMargin / 100))
-        : 0;
-
-      const wholesalePrice = validMargins
-        ? unitCost * (1 + (wholesaleMargin / 100))
-        : 0;
+      // NUEVA FÓRMULA DE MARKUP (Costo * (1 + Margen/100))
+      const retailPrice = validMargins ? unitCost * (1 + (retailMargin / 100)) : 0;
+      const wholesalePrice = validMargins ? unitCost * (1 + (wholesaleMargin / 100)) : 0;
 
       return {
         ...item,
@@ -928,28 +792,13 @@ const ImportaFacil = {
     });
 
     const totalUnits = calculatedItems.reduce((total, item) => {
-      return total + (
-        Number.isInteger(item.quantity) && item.quantity > 0
-          ? item.quantity
-          : 0
-      );
+      return total + (Number.isInteger(item.quantity) && item.quantity > 0 ? item.quantity : 0);
     }, 0);
 
-    const retailSales = calculatedItems.reduce((total, item) => {
-      return total + item.retailPrice * item.quantity;
-    }, 0);
-
-    const wholesaleSales = calculatedItems.reduce((total, item) => {
-      return total + item.wholesalePrice * item.quantity;
-    }, 0);
-
-    const retailProfit = calculatedItems.reduce((total, item) => {
-      return total + item.retailProfit;
-    }, 0);
-
-    const wholesaleProfit = calculatedItems.reduce((total, item) => {
-      return total + item.wholesaleProfit;
-    }, 0);
+    const retailSales = calculatedItems.reduce((total, item) => total + item.retailPrice * item.quantity, 0);
+    const wholesaleSales = calculatedItems.reduce((total, item) => total + item.wholesalePrice * item.quantity, 0);
+    const retailProfit = calculatedItems.reduce((total, item) => total + item.retailProfit, 0);
+    const wholesaleProfit = calculatedItems.reduce((total, item) => total + item.wholesaleProfit, 0);
 
     return {
       items: calculatedItems,
@@ -971,36 +820,31 @@ const ImportaFacil = {
 
     const invalidItems = result.items.some((item) => {
       return (
-        !Number.isInteger(item.quantity) ||
-        item.quantity < 1 ||
-        !Number.isFinite(item.purchaseUnit) ||
-        item.purchaseUnit < 0
+        !Number.isInteger(item.quantity) || item.quantity < 1 ||
+        !Number.isFinite(item.purchaseUnit) || item.purchaseUnit < 0
       );
     });
 
     result.items.forEach((item) => {
       if (item.subtotalOutput) {
-        item.subtotalOutput.textContent = this.money(
-          item.purchaseSubtotal
-        );
+        item.subtotalOutput.textContent = this.money(item.purchaseSubtotal);
       }
     });
 
-    // 1. Actualizar tarjetas del Paso 02
+    // 1. Tarjetas del Paso 02 (Sin las palabras "unidades" ni "$")
     this.setText("calculator-products-subtotal", this.money(result.productsSubtotal));
-    this.setText("calculator-total-units", result.totalUnits); // Sin la palabra "unidades"
-    this.setText("calculator-products-total", result.items.length); // Sin el símbolo $
+    this.setText("calculator-total-units", result.totalUnits);
+    this.setText("calculator-products-total", result.items.length);
 
-    // 2. Actualizar Gastos Compartidos (Paso 03)
+    // 2. Tarjetas del Paso 03 y 04
     this.setText("calculator-shared-costs", this.money(result.sharedCosts));
     this.setText("calculator-order-investment", this.money(result.investment));
 
-    // 3. Calcular y actualizar Precios Unitarios Sugeridos (Paso 05)
+    // 3. Promedio de Precios Unitarios para el Paso 05
     let avgRetailUnitPrice = 0;
     let avgWholesaleUnitPrice = 0;
 
     if (result.totalUnits > 0) {
-      // Calculamos el promedio de los precios de venta sugeridos
       const sumRetailPrices = result.items.reduce((sum, item) => sum + (item.retailPrice * item.quantity), 0);
       const sumWholesalePrices = result.items.reduce((sum, item) => sum + (item.wholesalePrice * item.quantity), 0);
       
@@ -1008,17 +852,14 @@ const ImportaFacil = {
       avgWholesaleUnitPrice = sumWholesalePrices / result.totalUnits;
     }
 
-    // Inyectamos los precios unitarios en las nuevas tarjetas
     this.setText("calculator-retail-unit-price", this.money(avgRetailUnitPrice));
     this.setText("calculator-wholesale-unit-price", this.money(avgWholesaleUnitPrice));
 
-    // 4. Actualizar Ventas Totales y Ganancias
+    // 4. Totales y Ganancias del Paso 05
     this.setText("calculator-retail-sales", this.money(result.retailSales));
     this.setText("calculator-retail-profit", this.money(result.retailProfit));
-
     this.setText("calculator-wholesale-sales", this.money(result.wholesaleSales));
     this.setText("calculator-wholesale-profit", this.money(result.wholesaleProfit));
-
 
     /* Impuestos opcionales */
     const taxEnabled = this.$("calculator-tax-enabled")?.checked || false;
@@ -1028,27 +869,14 @@ const ImportaFacil = {
 
     const validTaxRate = taxRate >= 0 && taxRate <= 1;
 
-    if (
-      taxEnabled &&
-      taxRate > 0 &&
-      validTaxRate &&
-      !invalidItems &&
-      result.validMargins
-    ) {
-      const taxFactor = taxMode === "included"
-        ? taxRate / (1 + taxRate)
-        : taxRate;
+    if (taxEnabled && taxRate > 0 && validTaxRate && !invalidItems && result.validMargins) {
+      const taxFactor = taxMode === "included" ? taxRate / (1 + taxRate) : taxRate;
 
       const retailTax = result.retailSales * taxFactor;
       const wholesaleTax = result.wholesaleSales * taxFactor;
 
-      const retailFinal = taxMode === "added"
-        ? result.retailSales + retailTax
-        : result.retailSales;
-
-      const wholesaleFinal = taxMode === "added"
-        ? result.wholesaleSales + wholesaleTax
-        : result.wholesaleSales;
+      const retailFinal = taxMode === "added" ? result.retailSales + retailTax : result.retailSales;
+      const wholesaleFinal = taxMode === "added" ? result.wholesaleSales + wholesaleTax : result.wholesaleSales;
 
       if (taxResults) taxResults.hidden = false;
 
@@ -1062,34 +890,15 @@ const ImportaFacil = {
 
     /* Mensajes de validación */
     if (invalidItems) {
-      this.showMessage(
-        "calculator-message",
-        "Verifica que cada producto tenga una cantidad entera mayor que cero y costos válidos.",
-        true
-      );
+      this.showMessage("calculator-message", "Verifica que cada producto tenga una cantidad entera mayor que cero y costos válidos.", true);
     } else if (!result.validMargins) {
-      this.showMessage(
-        "calculator-message",
-        "Los márgenes no pueden ser negativos.",
-        true
-      );
+      this.showMessage("calculator-message", "Los márgenes no pueden ser negativos.", true);
     } else if (!validTaxRate) {
-      this.showMessage(
-        "calculator-message",
-        "La tasa de impuesto debe estar entre 0 y 100 %.",
-        true
-      );
+      this.showMessage("calculator-message", "La tasa de impuesto debe estar entre 0 y 100 %.", true);
     } else if (!result.allocationValid) {
-      this.showMessage(
-        "calculator-message",
-        "Agrega costos de compra para distribuir los gastos compartidos.",
-        true
-      );
+      this.showMessage("calculator-message", "Agrega costos de compra para distribuir los gastos compartidos.", true);
     } else {
-      this.showMessage(
-        "calculator-message",
-        "Cálculo actualizado. Los gastos compartidos se distribuyen según el valor de compra."
-      );
+      this.showMessage("calculator-message", "Cálculo actualizado. Los gastos compartidos se distribuyen según el valor de compra.");
     }
 
     return result;
@@ -1103,10 +912,7 @@ const ImportaFacil = {
 
     if (orderDate) {
       const now = new Date();
-      const localDate = new Date(
-        now.getTime() - now.getTimezoneOffset() * 60000
-      );
-
+      const localDate = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
       orderDate.value = localDate.toISOString().slice(0, 10);
     }
 
@@ -1150,10 +956,7 @@ const ImportaFacil = {
 
     if (dateInput && !dateInput.value) {
       const now = new Date();
-      const localDate = new Date(
-        now.getTime() - now.getTimezoneOffset() * 60000
-      );
-
+      const localDate = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
       dateInput.value = localDate.toISOString().slice(0, 10);
     }
 
@@ -1169,9 +972,7 @@ const ImportaFacil = {
 
         if (removeButton) {
           removeButton.addEventListener("click", () => {
-            const rows = container.querySelectorAll(
-              "[data-calculator-item]"
-            );
+            const rows = container.querySelectorAll("[data-calculator-item]");
 
             if (rows.length <= 1) {
               row.querySelector(".calculator-item-name").value = "";
@@ -1217,7 +1018,6 @@ const ImportaFacil = {
         if (taxOptions) {
           taxOptions.hidden = !taxEnabled.checked;
         }
-
         this.calculatePrices();
       });
     }
@@ -1264,37 +1064,22 @@ const ImportaFacil = {
     });
 
     if (validItems.length !== allItems.length || !validItems.length) {
-      this.showMessage(
-        "calculator-message",
-        "Completa el nombre, la cantidad y el costo de compra de todos los productos.",
-        true
-      );
+      this.showMessage("calculator-message", "Completa el nombre, la cantidad y el costo de compra de todos los productos.", true);
       return;
     }
 
     if (!calculation.validMargins || !calculation.allocationValid) {
-      this.showMessage(
-        "calculator-message",
-        "Corrige los márgenes y los costos antes de guardar.",
-        true
-      );
+      this.showMessage("calculator-message", "Corrige los márgenes y los costos antes de guardar.", true);
       return;
     }
 
     if (!this.currentUserId) {
-      this.showMessage(
-        "calculator-message",
-        "Debes iniciar sesión para guardar productos.",
-        true
-      );
+      this.showMessage("calculator-message", "Debes iniciar sesión para guardar productos.", true);
       return;
     }
 
-    const retailMargin =
-      this.number("calculator-retail-margin", 35) / 100;
-
-    const wholesaleMargin =
-      this.number("calculator-wholesale-margin", 20) / 100;
+    const retailMargin = this.number("calculator-retail-margin", 35) / 100;
+    const wholesaleMargin = this.number("calculator-wholesale-margin", 20) / 100;
 
     const records = calculation.items.map((item) => ({
       user_id: this.currentUserId,
@@ -1314,26 +1099,14 @@ const ImportaFacil = {
     }
 
     try {
-      const { error } = await window.supabaseClient
-        .from("products")
-        .insert(records);
-
+      const { error } = await window.supabaseClient.from("products").insert(records);
       if (error) throw error;
 
       await this.loadProducts();
-
-      this.showMessage(
-        "calculator-message",
-        `${records.length} producto(s) guardado(s) en el inventario correctamente.`
-      );
+      this.showMessage("calculator-message", `${records.length} producto(s) guardado(s) en el inventario correctamente.`);
     } catch (error) {
       console.error("Error al guardar productos:", error);
-
-      this.showMessage(
-        "calculator-message",
-        error.message || "No se pudieron guardar los productos.",
-        true
-      );
+      this.showMessage("calculator-message", error.message || "No se pudieron guardar los productos.", true);
     } finally {
       if (button) {
         button.disabled = false;
@@ -1363,10 +1136,7 @@ const ImportaFacil = {
 
   initImports() {
     [
-      "import-quantity",
-      "import-product-cost",
-      "import-shipping-cost",
-      "import-other-costs"
+      "import-quantity", "import-product-cost", "import-shipping-cost", "import-other-costs"
     ].forEach((id) => {
       const input = this.$(id);
 
@@ -1388,12 +1158,7 @@ const ImportaFacil = {
       const otherCosts = this.number("import-other-costs");
 
       if (
-        !Number.isInteger(quantity) ||
-        quantity < 1 ||
-        productCost < 0 ||
-        shippingCost < 0 ||
-        otherCosts < 0 ||
-        productCost + shippingCost + otherCosts <= 0
+        !Number.isInteger(quantity) || quantity < 1 || productCost < 0 || shippingCost < 0 || otherCosts < 0 || productCost + shippingCost + otherCosts <= 0
       ) {
         alert("Ingresa una cantidad y costos válidos antes de continuar.");
         return;
@@ -1407,17 +1172,12 @@ const ImportaFacil = {
 
       if (firstRow) {
         firstRow.querySelector(".calculator-item-name").value = "Importación";
-        firstRow.querySelector(".calculator-item-quantity").value =
-          String(quantity);
-        firstRow.querySelector(".calculator-item-cost").value =
-          (productCost / quantity).toFixed(2);
+        firstRow.querySelector(".calculator-item-quantity").value = String(quantity);
+        firstRow.querySelector(".calculator-item-cost").value = (productCost / quantity).toFixed(2);
       }
 
-      this.$("calculator-shipping-total").value =
-        shippingCost.toFixed(2);
-
-      this.$("calculator-other-total").value =
-        otherCosts.toFixed(2);
+      this.$("calculator-shipping-total").value = shippingCost.toFixed(2);
+      this.$("calculator-other-total").value = otherCosts.toFixed(2);
 
       this.calculatePrices();
     });
@@ -1449,51 +1209,67 @@ const ImportaFacil = {
   },
 
   initEvents() {
-    const authForm = this.$("auth-form");
+    // --- LOGIN Y REGISTRO ---
+    const loginForm = this.$("login-form") || this.$("auth-form");
 
-    if (authForm) {
-      authForm.addEventListener("submit", (event) => {
+    if (loginForm) {
+      loginForm.addEventListener("submit", (event) => {
         event.preventDefault();
         this.handleAuth("login");
       });
     }
 
-    const registerButton = this.$("register-button");
-
-    if (registerButton) {
-      registerButton.addEventListener("click", () => {
+    const signupForm = this.$("signup-form");
+    if (signupForm) {
+      signupForm.addEventListener("submit", (event) => {
+        event.preventDefault();
         this.handleAuth("register");
       });
     }
 
-    const logoutButton = this.$("logout-button");
+    const showSignupBtn = this.$("show-signup-button");
+    const showLoginBtn = this.$("show-login-button");
 
-    if (logoutButton) {
-      logoutButton.addEventListener("click", () => {
-        this.handleLogout();
+    if (showSignupBtn && showLoginBtn && loginForm && signupForm) {
+      showSignupBtn.addEventListener("click", () => {
+        loginForm.hidden = true;
+        showSignupBtn.hidden = true;
+        signupForm.hidden = false;
+        showLoginBtn.hidden = false;
+      });
+
+      showLoginBtn.addEventListener("click", () => {
+        signupForm.hidden = true;
+        showLoginBtn.hidden = true;
+        loginForm.hidden = false;
+        showSignupBtn.hidden = false;
       });
     }
 
+    const logoutButton = this.$("logout-button");
+    if (logoutButton) {
+      logoutButton.addEventListener("click", () => this.handleLogout());
+    }
+
+    // --- NAVEGACIÓN ---
     document.querySelectorAll(".nav-item[data-view]").forEach((button) => {
       button.addEventListener("click", () => {
         this.showView(button.dataset.view);
       });
     });
 
+    // --- INVENTARIO ---
     const addButton = this.$("add-product-button");
-
     if (addButton) {
       addButton.addEventListener("click", () => this.openProductForm());
     }
 
     const cancelButton = this.$("cancel-product-button");
-
     if (cancelButton) {
       cancelButton.addEventListener("click", () => this.resetProductForm());
     }
 
     const productForm = this.$("product-form");
-
     if (productForm) {
       productForm.addEventListener("submit", (event) => {
         this.saveProduct(event);
@@ -1501,7 +1277,6 @@ const ImportaFacil = {
     }
 
     const searchInput = this.$("inventory-search");
-
     if (searchInput) {
       searchInput.addEventListener("input", () => {
         this.searchTerm = searchInput.value.trim();
@@ -1510,15 +1285,11 @@ const ImportaFacil = {
     }
 
     const exportButton = this.$("export-inventory-button");
-
     if (exportButton) {
-      exportButton.addEventListener("click", () => {
-        this.exportInventoryToCSV();
-      });
+      exportButton.addEventListener("click", () => this.exportInventoryToCSV());
     }
 
     const refreshButton = this.$("refresh-rates-btn");
-
     if (refreshButton) {
       refreshButton.addEventListener("click", () => this.loadRates());
     }
@@ -1549,14 +1320,8 @@ const ImportaFacil = {
       this.setAuthenticatedView(session);
     } catch (error) {
       console.error("Error al comprobar la sesión:", error);
-
       this.setAuthenticatedView(null);
-
-      this.showMessage(
-        "auth-message",
-        "No se pudo comprobar tu sesión. Recarga la página.",
-        true
-      );
+      this.showMessage("auth-message", "No se pudo comprobar tu sesión. Recarga la página.", true);
     }
 
     console.info("ImportaFácil se inició correctamente.");
