@@ -1,17 +1,26 @@
-
 /* =================================
-   IMPORTAFÁCIL — AUTENTICACIÓN
+   IMPORTAFÁCIL — AUTENTICACIÓN (v2)
    ================================= */
 
 "use strict";
 
+// Función auxiliar para obtener el cliente de forma segura
+function getSupabase() {
+  const client = window.supabaseClient;
+  if (!client) {
+    console.error("❌ Error: window.supabaseClient no está definido. Revisa supabase.js.");
+    throw new Error("Error de conexión con la base de datos.");
+  }
+  return client;
+}
+
 window.ImportaFacilAuth = {
   async register(email, password) {
-    const { data, error } =
-      await window.supabaseClient.auth.signUp({
-        email: email.trim(),
-        password
-      });
+    const client = getSupabase();
+    const { data, error } = await client.auth.signUp({
+      email: email.trim(),
+      password
+    });
 
     if (error) throw error;
 
@@ -25,11 +34,11 @@ window.ImportaFacilAuth = {
   },
 
   async login(email, password) {
-    const { data, error } =
-      await window.supabaseClient.auth.signInWithPassword({
-        email: email.trim(),
-        password
-      });
+    const client = getSupabase();
+    const { data, error } = await client.auth.signInWithPassword({
+      email: email.trim(),
+      password
+    });
 
     if (error) throw error;
 
@@ -37,15 +46,15 @@ window.ImportaFacilAuth = {
   },
 
   async logout() {
-    const { error } =
-      await window.supabaseClient.auth.signOut();
+    const client = getSupabase();
+    const { error } = await client.auth.signOut();
 
     if (error) throw error;
   },
 
   async getSession() {
-    const { data, error } =
-      await window.supabaseClient.auth.getSession();
+    const client = getSupabase();
+    const { data, error } = await client.auth.getSession();
 
     if (error) throw error;
 
@@ -53,11 +62,10 @@ window.ImportaFacilAuth = {
   },
 
   onSessionChange(callback) {
-    return window.supabaseClient.auth.onAuthStateChange(
-      (event, session) => {
-        callback(event, session);
-      }
-    );
+    const client = getSupabase();
+    return client.auth.onAuthStateChange((event, session) => {
+      callback(event, session);
+    });
   }
 };
 
