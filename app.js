@@ -165,14 +165,19 @@ const ImportaFacil = {
   },
 
   async handleAuth(action) {
-    // Buscamos el formulario y los campos (sirve para el HTML viejo y el nuevo)
+    // Buscamos el formulario y los campos
     const form = this.$("login-form") || this.$("auth-form");
     const emailInput = this.$("login-email") || this.$("auth-email");
     const passwordInput = this.$("login-password") || this.$("auth-password");
     const loginButton = this.$("login-button");
     const registerButton = this.$("signup-button") || this.$("register-button");
 
-    if (!form || !form.reportValidity()) return;
+    // Validación manual (reemplaza al reportValidity que causaba el error)
+    if (!form || !emailInput.value || !passwordInput.value) {
+      this.showMessage("auth-message", "Por favor, llena todos los campos.", true);
+      this.showMessage("signup-message", "Por favor, llena todos los campos.", true);
+      return;
+    }
 
     const email = emailInput.value.trim();
     const password = passwordInput.value;
@@ -210,12 +215,7 @@ const ImportaFacil = {
       this.showMessage("auth-message", "Sesión cerrada correctamente.");
     } catch (error) {
       console.error("Error al cerrar sesión:", error);
-
-      this.showMessage(
-        "auth-message",
-        error.message || "No se pudo cerrar la sesión.",
-        true
-      );
+      this.showMessage("auth-message", error.message || "No se pudo cerrar la sesión.", true);
     } finally {
       if (button) button.disabled = false;
     }
